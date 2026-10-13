@@ -1,0 +1,365 @@
+@use "../tokens" as *;
+
+/* ---------- quick info band under the hero ---------- */
+.em-quick {
+  position: relative;
+  z-index: 2;
+  padding: 0 1.25rem;
+  margin-top: -2.6rem;
+
+  @include mobile {
+    margin-top: -1.6rem;
+  }
+}
+
+.em-quick-in {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 0 auto;
+  padding: 0;
+  list-style: none;
+  border: 1px solid $line;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(6, 20, 61, 0.14);
+
+  li {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.3rem 1.4rem;
+
+    & + li {
+      border-left: 1px solid $line;
+    }
+  }
+
+  small {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: $muted;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  a,
+  strong {
+    display: block;
+    color: $ink;
+    font-weight: 700;
+    text-decoration: none;
+    line-height: 1.4;
+  }
+
+  a:hover {
+    color: $cobalt;
+  }
+
+  @include tablet {
+    grid-template-columns: 1fr;
+
+    li + li {
+      border-left: 0;
+      border-top: 1px solid $line;
+    }
+  }
+}
+
+.em-quick-ico {
+  display: flex;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.9rem;
+  background: $mist;
+  color: $cobalt;
+}
+
+.em-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.25rem;
+  color: #b42a2a;
+  font-size: 0.84rem;
+  font-weight: 700;
+
+  i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  &.is-open {
+    color: #12813f;
+
+    i {
+      box-shadow: 0 0 0 4px rgba(18, 129, 63, 0.18);
+    }
+  }
+}
+
+/* ---------- call-to-action band ---------- */
+.em-cta-band {
+  color: #fff;
+  padding: 3.5rem 1.25rem;
+  @include brand-gradient(85%, 20%);
+
+  h2 {
+    margin-bottom: 0.5rem;
+    max-width: 24ch;
+  }
+
+  p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .em-actions {
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+}
+
+.em-cta-band-in {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+
+  @include mobile {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ---------- gallery ---------- */
+.em-gal {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 1rem;
+    background: $mist;
+    cursor: zoom-in;
+  }
+
+  img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    transition: transform 0.35s;
+  }
+
+  button:hover img {
+    transform: scale(1.04);
+  }
+
+  @include tablet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.em-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(4, 16, 48, 0.88);
+  cursor: zoom-out;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 0.8rem;
+  }
+}
+
+/* ---------- map ---------- */
+.em-map-frame {
+  overflow: hidden;
+  border: 1px solid $line;
+  border-radius: 1.25rem;
+
+  iframe {
+    display: block;
+    width: 100%;
+    height: 380px;
+    border: 0;
+
+    @include mobile {
+      height: 280px;
+    }
+  }
+}
+
+/* ---------- floating actions ---------- */
+.em-top {
+  position: fixed;
+  right: 1.1rem;
+  bottom: 1.1rem;
+  z-index: 25;
+  display: flex;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: $cobalt;
+  color: #fff;
+  box-shadow: 0 10px 28px rgba(11, 63, 203, 0.4);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s, background 0.2s;
+
+  &.is-on {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+  }
+
+  &:hover {
+    background: $cobalt-dark;
+  }
+
+  @include mobile {
+    bottom: 4.9rem;
+  }
+}
+
+.em-dock {
+  display: none;
+
+  @include mobile {
+    position: fixed;
+    inset: auto 0 0 0;
+    z-index: 24;
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid $line;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(10px);
+
+    a,
+    button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 46px;
+      border-radius: 0.9rem;
+      font: inherit;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    a {
+      border: 1.5px solid $cobalt;
+      color: $cobalt;
+      background: #fff;
+    }
+
+    a svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    button {
+      border: 0;
+      background: $cobalt;
+      color: #fff;
+    }
+  }
+}
+
+/* ---------- richer footer ---------- */
+.em-foot-rich {
+  padding: 3rem 1.25rem 1.5rem;
+  text-align: left;
+
+  @include mobile {
+    padding-bottom: 5.5rem;
+  }
+}
+
+.em-foot-grid {
+  display: grid;
+  grid-template-columns: 1.6fr repeat(3, minmax(0, 1fr));
+  gap: 2rem;
+
+  h4 {
+    margin: 0 0 0.9rem;
+    color: #fff;
+    font-size: 0.95rem;
+  }
+
+  a {
+    display: block;
+    margin-bottom: 0.55rem;
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: none;
+
+    &:hover {
+      color: #fff;
+    }
+  }
+
+  p {
+    margin: 0.9rem 0 0;
+    max-width: 38ch;
+  }
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.em-foot-brand {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.6rem;
+  color: #fff !important;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.em-foot-copy {
+  max-width: 1160px;
+  margin: 2rem auto 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  text-align: center;
+}

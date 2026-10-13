@@ -3,6 +3,7 @@
     "sass-embedded": "^1.105.1"
   },
   "dependencies": {
-    "@supabase/server": "^1.9.0"
+    "@supabase/server": "^1.9.0",
+    "@supabase/supabase-js": "^2.117.3"
   }
 }

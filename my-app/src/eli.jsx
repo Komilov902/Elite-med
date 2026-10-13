@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import "./ElitemedSite.scss";
+import "./styles/auth.scss";
+import "./styles/extras.scss";
+import Mark from "./components/Mark.jsx";
+import AuthModal from "./components/AuthModal.jsx";
+import AccountMenu from "./components/AccountMenu.jsx";
+import ProfileModal from "./components/ProfileModal.jsx";
+import { QuickInfo, CtaBanner, Gallery, MapBlock, FloatingActions, SiteFooter } from "./components/Extras.jsx";
+import { useAuth, displayName, readPrefs, savePrefs } from "./lib/auth.js";
+import { AUTH_T, ACCOUNT_T as ACCOUNT_LABELS, EXTRA_T } from "./i18n/extra.js";
 
 
 const PHONES = [
@@ -10,8 +19,10 @@ const MAP_URL = "https://maps.app.goo.gl/ai1mzanjcTAhjKxd7";
 
 
 
-const TELEGRAM_BOT_TOKEN = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+
+const DEV_TG = import.meta.env.DEV
+  ? { token: import.meta.env.VITE_TELEGRAM_BOT_TOKEN, chat: import.meta.env.VITE_TELEGRAM_CHAT_ID }
+  : null;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -28,16 +39,16 @@ const SERVICE_PRICE_KEY = ["diagnostics", "laser", null, null, "dental", null];
 
 const DOCTORS = [
   {
-    name: "Ism Familiya 1",
+    name: "To'rayev Muhriddin",
     photo: "",
     role: { uz: "Oftalmolog-jarroh", ru: "Офтальмолог-хирург" },
-    exp: { uz: "X yil", ru: "X лет" },
-    edu: { uz: "Universitet nomi", ru: "Название вуза" },
+    exp: { uz: "5 yil", ru: "5 лет" },
+    edu: { uz: "", ru: "Название вуза" },
     certs: { uz: ["Sertifikat nomi"], ru: ["Название сертификата"] },
     focus: { uz: ["Yoʻnalish 1", "Yoʻnalish 2"], ru: ["Направление 1", "Направление 2"] },
   },
   {
-    name: "Ism Familiya 2",
+    name: "Hudoyberdiyev Jahongir",
     photo: "",
     role: { uz: "Lazer jarrohi", ru: "Лазерный хирург" },
     exp: { uz: "X yil", ru: "X лет" },
@@ -46,7 +57,7 @@ const DOCTORS = [
     focus: { uz: ["Yoʻnalish 1", "Yoʻnalish 2"], ru: ["Направление 1", "Направление 2"] },
   },
   {
-    name: "Ism Familiya 3",
+    name: "3",
     photo: "",
     role: { uz: "Stomatolog", ru: "Стоматолог" },
     exp: { uz: "X yil", ru: "X лет" },
@@ -55,7 +66,7 @@ const DOCTORS = [
     focus: { uz: ["Yoʻnalish 1", "Yoʻnalish 2"], ru: ["Направление 1", "Направление 2"] },
   },
   {
-    name: "Ism Familiya 4",
+    name: "4",
     photo: "",
     role: { uz: "Bolalar shifokori", ru: "Детский врач" },
     exp: { uz: "X yil", ru: "X лет" },
@@ -64,7 +75,7 @@ const DOCTORS = [
     focus: { uz: ["Yoʻnalish 1", "Yoʻnalish 2"], ru: ["Направление 1", "Направление 2"] },
   },
   {
-    name: "Ism Familiya 5",
+    name: "5",
     photo: "",
     role: { uz: "Optometrist", ru: "Оптометрист" },
     exp: { uz: "X yil", ru: "X лет" },
@@ -73,7 +84,7 @@ const DOCTORS = [
     focus: { uz: ["Yoʻnalish 1", "Yoʻnalish 2"], ru: ["Направление 1", "Направление 2"] },
   },
   {
-    name: "Ism Familiya 6",
+    name: "6",
     photo: "",
     role: { uz: "Diagnost shifokor", ru: "Врач-диагност" },
     exp: { uz: "X yil", ru: "X лет" },
@@ -400,16 +411,6 @@ const T = {
 
 
 
-function Mark({ shield = "currentColor", eye = "#fff", size = 34 }) {
-  return (
-    <svg width={size} height={size * 1.15} viewBox="0 0 100 115" aria-hidden="true">
-      <path d="M8 6h84v54c0 28-24 46-42 55C32 106 8 88 8 60z" fill={shield} />
-      <ellipse cx="50" cy="57" rx="32" ry="22" fill={eye} />
-      <path fill={shield} d="M44 44h12v7h8v12h-8v7H44v-7h-8V51h8z" />
-    </svg>
-  );
-}
-
 function Silhouette() {
   return (
     <svg className="em-sil" viewBox="0 0 100 130" aria-hidden="true">
@@ -460,13 +461,13 @@ function PhoneLinks({ className }) {
 }
 
 
-function BookingModal({ t, preset, onClose }) {
+function BookingModal({ t, preset, prefill, account, onClose }) {
   const f = t.form;
   const firstRef = useRef(null);
   const today = new Date().toISOString().slice(0, 10);
   const [data, setData] = useState({
-    name: "",
-    phone: "",
+    name: prefill?.name || "",
+    phone: prefill?.phone || "",
     service: preset.service || "",
     date: "",
     comment: "",
@@ -495,54 +496,44 @@ function BookingModal({ t, preset, onClose }) {
     }
     setStatus("sending");
     try {
-      if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-        throw new Error("Telegram settings are not set");
-      }
+      const payload = {
+        name: data.name.trim(),
+        phone: data.phone.trim(),
+        service: data.service,
+        date: data.date,
+        doctor: preset.doctor || "",
+        comment: data.comment.trim(),
+        account: account || "",
+      };
 
-      const message = [
-  "🩺 ELITE MED",
-  "━━━━━━━━━━━━━━━━━━━━",
-  "",
-  "📋 YANGI QABULGA ARIZA",
-  "",
-  `👤 Bemor:`,
-  `   ${data.name}`,
-  "",
-  `📞 Telefon:`,
-  `   ${data.phone}`,
-  "",
-  `🏥 Xizmat:`,
-  `   ${data.service || "Tanlanmagan"}`,
-  "",
-  `📅 Qulay sana:`,
-  `   ${data.date || "Tanlanmagan"}`,
-  "",
-  `👨‍⚕️ Shifokor:`,
-  `   ${preset.doctor || "Tanlanmagan"}`,
-  "",
-  `📝 Izoh:`,
-  `   ${data.comment || "Yo‘q"}`,
-  "",
-  "━━━━━━━━━━━━━━━━━━━━",
-  "📍 Elite Med",
-].join("\n");
-
-      const res = await fetch(
-        `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-        {
+      let ok = false;
+      if (DEV_TG?.token && DEV_TG?.chat) {
+        const text = [
+          "🩺 ELITE MED — YANGI QABULGA ARIZA",
+          `👤 ${payload.name}`,
+          `📞 ${payload.phone}`,
+          `🏥 ${payload.service || "Tanlanmagan"}`,
+          `📅 ${payload.date || "Tanlanmagan"}`,
+          `👨‍⚕️ ${payload.doctor || "Tanlanmagan"}`,
+          `📝 ${payload.comment || "Yo‘q"}`,
+        ].join("\n");
+        const res = await fetch(`https://api.telegram.org/bot${DEV_TG.token}/sendMessage`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            chat_id: TELEGRAM_CHAT_ID,
-            text: message,
-          }),
-        }
-      );
-
-      const result = await res.json();
-      if (!res.ok || !result.ok) {
-        throw new Error(result.description || `HTTP ${res.status}`);
+          body: JSON.stringify({ chat_id: DEV_TG.chat, text }),
+        });
+        const result = await res.json().catch(() => ({}));
+        ok = res.ok && result.ok;
+      } else {
+        const res = await fetch("/api/book", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const result = await res.json().catch(() => ({}));
+        ok = res.ok && result.ok;
       }
+      if (!ok) throw new Error("Booking request failed");
 
       setStatus("ok");
     } catch (err) {
@@ -632,8 +623,9 @@ function BookingModal({ t, preset, onClose }) {
   );
 }
 
-function Header({ lang, setLang, t, onBook }) {
+function Header({ lang, setLang, t, onBook, user, onAuth, onOpenProfile, onSignOut }) {
   const [open, setOpen] = useState(false);
+  const A = AUTH_T[lang];
   const links = [
     ["services", t.nav.services],
     ["prices", t.nav.prices],
@@ -666,6 +658,14 @@ function Header({ lang, setLang, t, onBook }) {
               </button>
             ))}
           </div>
+          {user ? (
+            <AccountMenu user={user} lang={lang} onBook={onBook} onOpenProfile={onOpenProfile} onSignOut={onSignOut} />
+          ) : (
+            <div className="ea-actions">
+              <button className="ea-btn" onClick={() => onAuth("signin")}>{A.signin}</button>
+              <button className="ea-btn ea-btn-fill" onClick={() => onAuth("signup")}>{A.signup}</button>
+            </div>
+          )}
           <button className="em-cta" onClick={() => onBook({})}>
             {t.book}
           </button>
@@ -688,6 +688,18 @@ function Header({ lang, setLang, t, onBook }) {
               {label}
             </a>
           ))}
+          {user ? (
+            <>
+              <button type="button" className="ea-menu-link" onClick={() => { setOpen(false); onOpenProfile("profile"); }}>{ACCOUNT_LABELS[lang].profile}</button>
+              <button type="button" className="ea-menu-link" onClick={() => { setOpen(false); onOpenProfile("settings"); }}>{ACCOUNT_LABELS[lang].settings}</button>
+              <button type="button" className="ea-menu-link is-danger" onClick={() => { setOpen(false); onSignOut(); }}>{ACCOUNT_LABELS[lang].signout}</button>
+            </>
+          ) : (
+            <div className="ea-menu-auth">
+              <button className="ea-btn" onClick={() => { setOpen(false); onAuth("signin"); }}>{A.signin}</button>
+              <button className="ea-btn ea-btn-fill" onClick={() => { setOpen(false); onAuth("signup"); }}>{A.signup}</button>
+            </div>
+          )}
         </nav>
       )}
     </header>
@@ -1209,32 +1221,82 @@ function Contact({ t }) {
 
 
 export default function ElitemedSite() {
-  const [lang, setLang] = useState("uz");
-  const [booking, setBooking] = useState(null); 
+  const [prefs, setPrefsState] = useState(readPrefs);
+  const [lang, setLangState] = useState(prefs.lang === "ru" ? "ru" : "uz");
+  const [booking, setBooking] = useState(null);
+  const [authMode, setAuthMode] = useState(null);
+  const [profileTab, setProfileTab] = useState(null);
+  const auth = useAuth();
+  const { user } = auth;
   const t = T[lang];
+  const x = EXTRA_T[lang];
+
+  const setLang = (l) => {
+    setLangState(l);
+    setPrefsState(savePrefs({ lang: l }));
+  };
+  const setPrefs = (patch) => setPrefsState(savePrefs(patch));
 
   useEffect(() => {
     document.documentElement.lang = lang;
   }, [lang]);
 
+ 
+  useEffect(() => {
+    if (auth.recovery) setAuthMode("recovery");
+  }, [auth.recovery]);
+
+  const oauthError = auth.notice ? AUTH_T[lang].errors[auth.notice] || AUTH_T[lang].errors.unknown : "";
+  useEffect(() => {
+    if (auth.notice) setAuthMode((m) => m || "signin");
+  }, [auth.notice]);
+
+  const closeAuth = () => {
+    if (authMode === "recovery") auth.finishRecovery();
+    auth.clearNotice();
+    setAuthMode(null);
+  };
+
   const closeBooking = useRef(() => setBooking(null)).current;
+  const closeProfile = () => setProfileTab(null);
+
+  const prefill = user && prefs.autofill
+    ? { name: displayName(user), phone: user.user_metadata?.phone_number || "" }
+    : null;
+
+  const navLinks = [
+    ["services", t.nav.services],
+    ["prices", t.nav.prices],
+    ["doctors", t.nav.doctors],
+    ["faq", t.nav.faq],
+    ["contact", t.nav.contact],
+  ];
 
   return (
     <div className="em">
-      <Header lang={lang} setLang={setLang} t={t} onBook={setBooking} />
+      <Header lang={lang} setLang={setLang} t={t} onBook={setBooking} user={user} onAuth={setAuthMode} onOpenProfile={setProfileTab} onSignOut={auth.signOut} />
       <main>
         <Hero t={t} onBook={setBooking} />
+        <QuickInfo t={t} x={x} phones={PHONES} mapUrl={MAP_URL} />
         <Why t={t} />
         <Services t={t} lang={lang} onBook={setBooking} />
         <Process t={t} />
         <Prices t={t} lang={lang} />
         <Doctors t={t} lang={lang} onBook={setBooking} />
+        <Gallery x={x} lang={lang} />
         <Reviews t={t} lang={lang} />
+        <CtaBanner x={x} t={t} onBook={setBooking} phone={PHONES[0]} />
         <Faq t={t} />
+        <MapBlock x={x} mapUrl={MAP_URL} />
         <Contact t={t} />
       </main>
-      <footer className="em-foot">© 2026 Elite Med · {t.footer}</footer>
-      {booking && <BookingModal key={lang} t={t} preset={booking} onClose={closeBooking} />}
+      <SiteFooter t={t} x={x} links={navLinks} phones={PHONES} mapUrl={MAP_URL} />
+      <FloatingActions t={t} x={x} phone={PHONES[0]} onBook={setBooking} />
+      {booking && <BookingModal key={lang} t={t} preset={booking} prefill={prefill} account={user?.email} onClose={closeBooking} />}
+      {authMode && <AuthModal key={authMode === "recovery" ? "recovery" : "auth"} mode={authMode} setMode={setAuthMode} onClose={closeAuth} lang={lang} auth={auth} initialError={oauthError} />}
+      {profileTab && user && (
+        <ProfileModal tab={profileTab} user={user} lang={lang} setLang={setLang} prefs={prefs} setPrefs={setPrefs} auth={auth} onClose={closeProfile} onSignOut={() => { closeProfile(); auth.signOut(); }} />
+      )}
     </div>
   );
 }
